@@ -38,6 +38,9 @@ const stats = {
     tunnels: 0
 };
 
+// are we serving from a subdomain?
+var sub = false; 
+
 // handle proxying a request to a client
 // will wait for a tunnel socket to become available
 function maybe_bounce(req, res, sock, head) {
@@ -47,7 +50,13 @@ function maybe_bounce(req, res, sock, head) {
         return false;
     }
 
-    const subdomain = tldjs.getSubdomain(hostname);
+    var subdomain = tldjs.getSubdomain(hostname);
+    // if we're serving from a subdomain do a proper check
+    if (sub) {
+        var subsub = (subdomain || '').split('.');
+        subdomain = subsub.length > 1 ? subsub[0] : '';
+    }
+
     if (!subdomain) {
         return false;
     }
@@ -226,6 +235,8 @@ module.exports = function(opt) {
     opt = opt || {};
 
     const schema = opt.secure ? 'https' : 'http';
+
+    sub = opt.sub || false;
 
     const app = express();
 
